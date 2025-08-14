@@ -1,0 +1,15 @@
+{
+  "name": "Pilotage Chauffage Intelligent",
+  "short_name": "Chauffage",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#2563eb",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
