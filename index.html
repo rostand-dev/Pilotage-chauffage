@@ -1,199 +1,437 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="viewport-fit=cover, width=device-width, initial-scale=1, maximum-scale=1">
+<title>Chauffage</title>
+
+<!-- PWA / Icons -->
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a84ff">
+
+<!-- Chart -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+/* ===== iOS Design System (mobile-first) ===== */
+:root{
+  --tint:#0a84ff;               /* iOS Blue */
+  --bg:#f2f2f7;                 /* system grouped bg */
+  --card:rgba(255,255,255,.75); /* frosted */
+  --border:rgba(0,0,0,.08);
+  --text:#111; --sub:#6b7280;
+  --green:#34c759; --orange:#ff9f0a; --red:#ff3b30;
+  --shadow:0 16px 36px rgba(0,0,0,.10);
+  --blur:blur(14px);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0b0b0f; --card:rgba(28,28,30,.6); --border:rgba(255,255,255,.08);
+    --text:#f5f5f7; --sub:#a1a1aa; --shadow:0 20px 44px rgba(0,0,0,.55);
+  }
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; font:-apple-system-body, 16px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", Segoe UI, Roboto, Arial, sans-serif;
+  color:var(--text);
+  background:linear-gradient(180deg, #eef2ff 0%, #f8fafc 40%, var(--bg) 100%);
+}
+@media (prefers-color-scheme: dark){
+  body{ background:radial-gradient(1000px 600px at 50% -200px, rgba(10,132,255,.18), transparent 60%), linear-gradient(180deg,#0b0c10,#0b0b0f 60%); }
+}
+
+/* NavBar */
+.navbar{
+  position:sticky; top:0; z-index:50;
+  backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur);
+  background:color-mix(in srgb, var(--card) 88%, transparent);
+  border-bottom:1px solid var(--border);
+}
+.navbar .in{
+  padding:14px max(16px, env(safe-area-inset-left)) 10px max(16px, env(safe-area-inset-right));
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+}
+.title{ font-weight:700; letter-spacing:.2px; font-size:17px }
+.badge{ font-size:12px; padding:4px 10px; border-radius:999px; border:1px solid var(--border);
+  background:color-mix(in srgb, var(--card) 96%, transparent); }
+
+/* Container */
+.page{ display:none; }
+.page.active{ display:block; }
+.wrap{ padding:14px 16px calc(90px + env(safe-area-inset-bottom)); max-width:780px; margin:0 auto; }
+.card{
+  border:1px solid var(--border); border-radius:18px; background:var(--card);
+  backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur);
+  box-shadow:var(--shadow); padding:14px 14px 12px 14px; margin:12px 0;
+}
+.h2{ margin:2px 2px 10px 2px; font-weight:700; font-size:16.5px }
+
+/* Inputs iOS */
+.row{ display:flex; gap:10px; flex-wrap:wrap }
+.cell{ flex:1 1 160px }
+label{ display:block; font-size:12px; color:var(--sub); margin:2px 2px 6px }
+.input{
+  width:100%; border-radius:12px; padding:12px 12px; border:1px solid var(--border);
+  background:color-mix(in srgb, var(--card) 94%, transparent); color:var(--text); outline:none;
+}
+.input:focus{ border-color:color-mix(in srgb, var(--tint) 35%, var(--border)); box-shadow:0 0 0 6px color-mix(in srgb, var(--tint) 14%, transparent) }
+
+/* Buttons */
+.btn{
+  appearance:none; border:0; border-radius:12px; padding:12px 14px; font-weight:700;
+  background:var(--tint); color:white; box-shadow:0 8px 18px color-mix(in srgb, var(--tint) 30%, transparent);
+  transition:transform .08s ease, filter .2s ease;
+}
+.btn:active{ transform:translateY(1px) }
+.btn-ghost{
+  background:color-mix(in srgb, var(--card) 90%, transparent); color:var(--text); border:1px solid var(--border); box-shadow:none;
+}
+
+/* KPIs & chips */
+.kpi{ display:flex; align-items:center; justify-content:space-between; gap:12px }
+.kpi .big{ font-weight:800; font-size:28px }
+.kpi .desc{ font-size:13px; color:var(--sub) }
+.chips{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px }
+.chip{ font-size:12px; padding:6px 10px; border-radius:999px; border:1px solid var(--border) }
+.chip.green{ background:color-mix(in srgb, var(--green) 18%, transparent); color:#063; border-color:color-mix(in srgb, var(--green) 35%, white) }
+.chip.orange{ background:color-mix(in srgb, var(--orange) 18%, transparent); color:#7a3d00 }
+.chip.red{ background:color-mix(in srgb, var(--red) 18%, transparent); color:#7a0010 }
+
+/* Chart */
+.chart-wrap{ height:240px }
+canvas{ background:rgba(0,0,0,.04); border-radius:14px; border:1px solid var(--border) }
+
+/* History list (cards) */
+.history-list{ display:flex; flex-direction:column; gap:10px; margin-top:10px }
+.history-card{
+  display:flex; justify-content:space-between; align-items:center; gap:10px;
+  background:color-mix(in srgb, var(--card) 90%, transparent); border:1px solid var(--border);
+  border-radius:14px; padding:10px 12px;
+}
+.h-left{ display:flex; align-items:center; gap:10px }
+.h-mode{ padding:4px 8px; border-radius:999px; border:1px solid var(--border); font-size:12px }
+
+/* Tab bar (iOS) */
+.tabbar{
+  position:fixed; left:0; right:0; bottom:0; z-index:60;
+  padding:6px max(12px, env(safe-area-inset-left)) calc(6px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-right));
+  backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur);
+  background:color-mix(in srgb, var(--card) 88%, transparent); border-top:1px solid var(--border);
+}
+.tabs{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-width:780px; margin:0 auto }
+.tab{
+  appearance:none; border:0; background:transparent; padding:10px 8px; border-radius:12px; color:var(--sub); font-weight:600
+}
+.tab.active{ color:var(--tint); background:color-mix(in srgb, var(--tint) 12%, transparent) }
+
+/* Subtle motion */
+@keyframes fadeUp{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)} }
+.card{ animation:fadeUp .35s ease both }
+
+/* Accessibility */
+.visually-hidden{ position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); border:0 }
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar" role="navigation" aria-label="Top bar">
+  <div class="in">
+    <div class="title">Pilotage Chauffage</div>
+    <div class="badge" id="todayTag">Analyse…</div>
+  </div>
+</nav>
+
+<!-- PAGES -->
+<main id="page-today" class="page active" role="main">
+  <div class="wrap">
+    <!-- KPI Meteo -->
+    <section class="card" aria-labelledby="kpi-h">
+      <div class="h2" id="kpi-h">Aujourd’hui</div>
+      <div class="kpi">
+        <div class="big" id="kpiTemp">--.– °C</div>
+        <button id="refreshBtn" type="button" class="btn" aria-label="Actualiser">↻ Actualiser</button>
+      </div>
+      <div class="desc" id="kpiDesc">Température moyenne prévue</div>
+      <div class="chips">
+        <span class="chip" id="chipMode">Mode conseillé: —</span>
+        <span class="chip" id="chipCost">Coût indicatif: — €/kWh</span>
+      </div>
+    </section>
+
+    <!-- Volet PAC/Insert -->
+    <section class="card">
+      <div class="h2">Consignes intelligentes</div>
+      <div style="margin-bottom:8px;font-size:13px;color:var(--sub)">Ajustées à tes heures creuses et à la T° du jour.</div>
+
+      <div class="h2" style="margin-top:8px">⚡ PAC — maximiser HC / limiter HP</div>
+      <ul id="pacTips" style="margin:6px 0 10px 18px;line-height:1.5;font-size:14px"></ul>
+
+      <div class="h2" style="margin-top:8px">🔥 Insert — quand l’allumer</div>
+      <div id="insertTips" style="line-height:1.55;font-size:14px"></div>
+    </section>
+  </div>
+</main>
+
+<main id="page-history" class="page" aria-label="Historique">
+  <div class="wrap">
+    <section class="card">
+      <div class="h2">Historique (30 jours)</div>
+      <div class="chart-wrap"><canvas id="historyChart" aria-label="Graphique historique"></canvas></div>
+    </section>
+    <section class="card">
+      <div class="h2">Détail</div>
+      <div id="historyList" class="history-list" role="list"></div>
+      <div style="display:flex;gap:10px; margin-top:10px">
+        <button id="resetBtn" type="button" class="btn-ghost btn" aria-label="Réinitialiser l’historique">🗑 Réinitialiser</button>
+      </div>
+    </section>
+  </div>
+</main>
+
+<main id="page-settings" class="page" aria-label="Réglages">
+  <div class="wrap">
+    <section class="card">
+      <div class="h2">Réglages rapides</div>
+      <div class="row">
+        <div class="cell"><label>Latitude</label><input id="lat" type="number" step="0.0001" class="input" placeholder="48.8566"></div>
+        <div class="cell"><label>Longitude</label><input id="lon" type="number" step="0.0001" class="input" placeholder="2.3522"></div>
+      </div>
+      <div class="row">
+        <div class="cell"><label>Seuil PAC → Insert (°C)</label><input id="seuilPac" type="number" step="0.1" class="input" placeholder="5"></div>
+        <div class="cell"><label>Seuil Insert → Gaz (°C)</label><input id="seuilInsert" type="number" step="0.1" class="input" placeholder="-2"></div>
+      </div>
+      <div class="row">
+        <div class="cell"><label>Coût PAC (€/kWh utile)</label><input id="coutPac" type="number" step="0.001" class="input" placeholder="0.060"></div>
+        <div class="cell"><label>Coût Insert (€/kWh utile)</label><input id="coutInsert" type="number" step="0.001" class="input" placeholder="0.067"></div>
+        <div class="cell"><label>Coût Gaz (€/kWh utile)</label><input id="coutGaz" type="number" step="0.001" class="input" placeholder="0.120"></div>
+      </div>
+      <div class="row">
+        <div class="cell"><label>HC — début</label><input id="hcStart" type="time" class="input" value="00:00"></div>
+        <div class="cell"><label>HC — fin</label><input id="hcEnd" type="time" class="input" value="08:00"></div>
+      </div>
+      <div class="row">
+        <div class="cell"><label>Coucher enfants</label><input id="tKids" type="time" class="input" value="20:00"></div>
+        <div class="cell"><label>Coucher parents</label><input id="tParents" type="time" class="input" value="23:00"></div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="saveBtn" type="button" class="btn">💾 Sauvegarder</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="h2">Économies cumulées</div>
+      <div style="font-size:20px;font-weight:800" id="eco">—</div>
+      <div style="font-size:13px;color:var(--sub)">Base de comparaison : 100% Gaz.</div>
+    </section>
+  </div>
+</main>
+
+<!-- TAB BAR -->
+<nav class="tabbar" role="tablist" aria-label="Onglets">
+  <div class="tabs">
+    <button class="tab active" data-page="today" role="tab" aria-selected="true">Aujourd’hui</button>
+    <button class="tab" data-page="history" role="tab" aria-selected="false">Historique</button>
+    <button class="tab" data-page="settings" role="tab" aria-selected="false">Réglages</button>
+  </div>
+</nav>
+
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  /* ====== NAMESPACE & STORAGE ====== */
-  const APP_ID = 'chauffage.v1'; // incrémente si breaking change, ex: v2
-  const K = {
-    settings: `${APP_ID}:settings`,
-    history:  `${APP_ID}:history`,
-    ecoTot:   `${APP_ID}:ecoTot`
-  };
+/* =========================================================
+   Storage namespacing + migration (robuste entre versions)
+   ========================================================= */
+const APP_ID='chauffage.v1';
+const K={ settings:`${APP_ID}:settings`, history:`${APP_ID}:history`, ecoTot:`${APP_ID}:ecoTot` };
+const safeParse=(raw,fb)=>{ try{ return raw?JSON.parse(raw):fb }catch{ return fb } };
+const Sget=(k,fb)=>safeParse(localStorage.getItem(k),fb);
+const Sset=(k,v)=>localStorage.setItem(k, JSON.stringify(v));
+// migrate legacy keys
+(function(){
+  const oldS=localStorage.getItem('settings'); const oldH=localStorage.getItem('history'); const oldE=localStorage.getItem('ecoTot');
+  if(oldS && !localStorage.getItem(K.settings)) localStorage.setItem(K.settings, oldS);
+  if(oldH && !localStorage.getItem(K.history))  localStorage.setItem(K.history,  oldH);
+  if(oldE && !localStorage.getItem(K.ecoTot))   localStorage.setItem(K.ecoTot,   oldE);
+})();
 
-  // lecture/sauvegarde sûres
-  const safeParse = (raw, fallback) => {
-    try { return raw ? JSON.parse(raw) : fallback; } catch { return fallback; }
-  };
-  const storageGet = (key, fb) => safeParse(localStorage.getItem(key), fb);
-  const storageSet = (key, val) => localStorage.setItem(key, JSON.stringify(val));
+/* =========================================================
+   State
+   ========================================================= */
+let settings = { lat:'',lon:'',seuilPac:'',seuilInsert:'',coutPac:'',coutInsert:'',coutGaz:'',hcStart:'00:00',hcEnd:'08:00',tKids:'20:00',tParents:'23:00', ...Sget(K.settings,{}) };
+let historyData = Sget(K.history,[]);
+let ecoTot = Number(localStorage.getItem(K.ecoTot)||'0');
 
-  // migration depuis anciennes clés (si existantes)
-  (function migrate(){
-    const oldS = localStorage.getItem('settings');
-    const oldH = localStorage.getItem('history');
-    const oldE = localStorage.getItem('ecoTot');
-    if (oldS && !localStorage.getItem(K.settings)) localStorage.setItem(K.settings, oldS);
-    if (oldH && !localStorage.getItem(K.history))  localStorage.setItem(K.history,  oldH);
-    if (oldE && !localStorage.getItem(K.ecoTot))   localStorage.setItem(K.ecoTot,   oldE);
-  })();
+/* =========================================================
+   DOM helpers
+   ========================================================= */
+const $=(id)=>document.getElementById(id);
+const q=(sel)=>document.querySelector(sel);
+function setText(id,txt){ const el=$(id); if(el) el.textContent=txt; }
+function toast(msg){
+  const n=document.createElement('div');
+  n.textContent=msg;
+  n.style.cssText='position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#111827cc;color:#fff;padding:10px 14px;border-radius:13px;border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(8px);z-index:9999';
+  document.body.appendChild(n); setTimeout(()=>n.remove(),1600);
+}
 
-  /* ====== ÉTAT ====== */
-  // valeurs par défaut uniquement pour affichage; on NE sauvegarde PAS tant que l'utilisateur n'a pas cliqué
-  const defaults = { lat:'', lon:'', seuilPac:'', seuilInsert:'', coutPac:'', coutInsert:'', coutGaz:'', hcStart:'00:00', hcEnd:'08:00', tKids:'20:00', tParents:'23:00' };
-  let settings    = { ...defaults, ...storageGet(K.settings, {}) };   // fusion non destructive
-  let historyData = storageGet(K.history,  []);
-  let ecoTot      = Number(localStorage.getItem(K.ecoTot) || '0');
-
-  /* ====== DOM HELPERS ====== */
-  const $ = id => document.getElementById(id);
-  const toast = (msg)=>{
-    const n=document.createElement('div');
-    n.textContent=msg;
-    n.style.cssText='position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#111827cc;color:#fff;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(6px);z-index:9999';
-    document.body.appendChild(n); setTimeout(()=>n.remove(),1600);
-  };
-  const updateTag = (text, color='rgba(255,255,255,.10)')=>{
-    const t=$('todayTag'); if(!t) return; t.textContent=text; t.style.background=color;
-  };
-
-  /* ====== CHARGER LES CHAMPS SANS ÉCRASER LE STORAGE ====== */
-  function loadSettingsToUI(){
-    // on affiche ce qu'on a, sinon placeholders; on n'écrit rien dans localStorage ici
-    const map = {
-      lat:'lat', lon:'lon', seuilPac:'seuilPac', seuilInsert:'seuilInsert',
-      coutPac:'coutPac', coutInsert:'coutInsert', coutGaz:'coutGaz',
-      hcStart:'hcStart', hcEnd:'hcEnd', tKids:'tKids', tParents:'tParents'
-    };
-    for (const k in map){ if($(map[k]) && settings[k] !== undefined) $(map[k]).value = settings[k]; }
-  }
-
-  /* ====== SAUVEGARDE PARAMS (uniquement au clic) ====== */
-  function saveSettings(){
-    const getNum = (id)=> {
-      const v = parseFloat($(id).value);
-      return Number.isFinite(v) ? v : settings[id]; // ne pas écraser par NaN
-    };
-    const getStr = (id)=> $(id).value || settings[id];
-
-    const newSettings = {
-      lat: getNum('lat'), lon: getNum('lon'),
-      seuilPac: getNum('seuilPac'), seuilInsert: getNum('seuilInsert'),
-      coutPac: getNum('coutPac'), coutInsert: getNum('coutInsert'), coutGaz: getNum('coutGaz'),
-      hcStart: getStr('hcStart') || '00:00',
-      hcEnd:   getStr('hcEnd')   || '08:00',
-      tKids:   getStr('tKids')   || '20:00',
-      tParents:getStr('tParents')|| '23:00'
-    };
-
-    // fusion: on garde les anciennes valeurs si champ vide
-    settings = Object.fromEntries(Object.keys(defaults).map(k => [k, (newSettings[k] ?? settings[k] ?? defaults[k])]));
-    storageSet(K.settings, settings);
-    toast('Paramètres sauvegardés ✅');
-    renderOperationalTips(); // met à jour les volets
-  }
-
-  /* ====== RECOMMANDATION & HISTORIQUE ====== */
-  async function getRecommendation(){
-    try{
-      if(!(settings.lat && settings.lon)){ toast('Renseigne latitude/longitude'); return; }
-      updateTag('Mise à jour…', 'rgba(59,130,246,.25)');
-
-      const url=`https://api.open-meteo.com/v1/forecast?latitude=${settings.lat}&longitude=${settings.lon}&daily=temperature_2m_max,temperature_2m_min&timezone=auto`;
-      const res=await fetch(url); const data=await res.json();
-      const tmin=data?.daily?.temperature_2m_min?.[0]; const tmax=data?.daily?.temperature_2m_max?.[0];
-      if (tmin==null || tmax==null) throw new Error('Données météo indisponibles');
-      const tmoy=(tmin+tmax)/2;
-
-      let mode='Gaz', badge='rgba(244,63,94,.25)';
-      if(tmoy >= settings.seuilPac){ mode='PAC'; badge='rgba(16,185,129,.30)'; }
-      else if(tmoy >= settings.seuilInsert){ mode='Insert'; badge='rgba(245,158,11,.30)'; }
-
-      const cout = mode==='PAC'?settings.coutPac:(mode==='Insert'?settings.coutInsert:settings.coutGaz);
-      $('reco') && ($('reco').innerHTML = `🌡 <b>${tmoy.toFixed(1)}°C</b> · Mode conseillé : <b>${mode}</b><br>💶 Coût indicatif : <b>${(cout||0).toFixed(3)}</b> €/kWh utile`);
-      updateTag(mode==='PAC'?'Confort doux':(mode==='Insert'?'Hiver modéré':'Froid marqué'), badge);
-
-      // Historique + éco cumulées
-      historyData.push({date:new Date().toLocaleDateString(), mode, tmoy:Number(tmoy.toFixed(1))});
-      if(historyData.length>30) historyData.shift();
-      storageSet(K.history, historyData);
-
-      const kwhJour=15, coutGazRef=(settings.coutGaz||0)*kwhJour, coutJour=(cout||0)*kwhJour;
-      ecoTot = ecoTot + (coutGazRef - coutJour);
-      localStorage.setItem(K.ecoTot, String(ecoTot));
-      $('eco') && ($('eco').textContent = `💰 Économies cumulées (réf. tout gaz) : ${ecoTot.toFixed(2)} €`);
-
-      renderChart(true); renderHistoryList(); renderOperationalTips(tmoy);
-    }catch(e){
-      console.error(e);
-      $('reco') && ($('reco').textContent='Erreur météo — vérifie la connexion et les coordonnées GPS.');
-      updateTag('Erreur', 'rgba(244,63,94,.35)');
-    }
-  }
-
-  /* ====== VOLETS OPÉRATIONNELS ====== */
-  const timeStrToMin = (t)=>{const [h,m]=String(t).split(':').map(n=>parseInt(n||'0',10));return h*60+m}
-  const minToTimeStr = (m)=>{const h=((Math.floor(m/60)%24)+24)%24; const mm=("0"+((m%60+60)%60)).slice(-2); return ("0"+h).slice(-2)+":"+mm}
-  function renderOperationalTips(tmoy=null){
-    const s=settings;
-    const hcStartMin=timeStrToMin(s.hcStart||'00:00');
-    const hcEndMin  =timeStrToMin(s.hcEnd  ||'08:00');
-    const preheatStart = Math.max(hcEndMin-120, hcStartMin);
-    $('pacTips') && ($('pacTips').innerHTML = `
-      <li>Entre <b>${s.hcStart||'00:00'}</b> et <b>${s.hcEnd||'08:00'}</b> : maintenir (mode auto/éco).</li>
-      <li>Préchauffe <b>${minToTimeStr(preheatStart)}</b> → <b>${s.hcEnd||'08:00'}</b> pour couvrir le matin en HP.</li>
-      <li>Limiter la PAC de <b>18:00</b> à <b>22:00</b> (HP) — inertie + éventuel insert.</li>
-      <li>Après <b>${s.tKids||'20:00'}</b>, relance douce 30–60 min si nécessaire.</li>`
-    );
-
-    const refTmoy = (tmoy!==null)? tmoy : (historyData.slice(-1)[0]?.tmoy ?? null);
-    let insertHTML='';
-    if(refTmoy===null){
-      insertHTML = `Allumer l’insert si T° moyenne ≤ <b>${(s.seuilPac||5)+2}°C</b> (économie vs PAC en HP).`;
-    }else if(refTmoy <= (s.seuilInsert||-2)){
-      insertHTML = `T° très basse → <b>17:00–18:00</b>. PAC surtout en HC, gaz en secours si besoin nuit.`;
-    }else if(refTmoy <= ((s.seuilPac||5)+2)){
-      insertHTML = `T° modérée (${refTmoy.toFixed(1)}°C) → <b>18:00–19:00</b> pour couvrir la soirée (HP).`;
-    }else{
-      insertHTML = `T° douce (${refTmoy.toFixed(1)}°C) → insert non nécessaire, PAC seule (max HC).`;
-    }
-    insertHTML += `<div style="margin-top:6px">⏱️ Laisser s’éteindre avant <b>${settings.tParents||'23:00'}</b>.</div>`;
-    $('insertTips') && ($('insertTips').innerHTML = insertHTML);
-  }
-
-  /* ====== GRAPHIQUE & LISTE ====== */
-  let chart;
-  function renderChart(animated=false){
-    const canvas=$('historyChart');
-    if(!canvas || typeof Chart === 'undefined'){ return; }
-    const ctx=canvas.getContext('2d');
-    const labels=historyData.map(e=>e.date);
-    const values=historyData.map(e=>e.tmoy);
-    if(chart) chart.destroy();
-    chart=new Chart(ctx,{
-      type:'line',
-      data:{labels,
-        datasets:[{label:'Température moyenne (°C)',data:values,borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.18)',tension:.25,fill:true,pointRadius:3}]},
-      options:{responsive:true,maintainAspectRatio:false,
-        animation:animated?{duration:700,easing:'easeOutQuart'}:false,
-        plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
-        scales:{x:{grid:{display:false},ticks:{color:'#e5e7eb'}},y:{grid:{color:'rgba(255,255,255,.12)'},ticks:{color:'#e5e7eb'}}}
-    });
-  }
-  function renderHistoryList(){
-    const wrap=$('historyList'); if(!wrap) return;
-    wrap.innerHTML='';
-    if(!historyData.length){wrap.innerHTML='<div class="small" style="opacity:.8">Aucune donnée pour le moment.</div>'; return;}
-    historyData.slice().reverse().forEach(it=>{
-      const card=document.createElement('div'); card.className='history-card';
-      const modeColor=it.mode==='PAC'?'rgba(16,185,129,.30)':(it.mode==='Insert'?'rgba(245,158,11,.30)':'rgba(244,63,94,.30)');
-      card.innerHTML=`<div class="h-left"><div class="h-date">${it.date}</div><div class="h-mode" style="background:${modeColor}">${it.mode}</div></div>
-                      <div class="h-temp">🌡 ${it.tmoy.toFixed(1)}°C</div>`;
-      wrap.appendChild(card);
-    });
-  }
-
-  /* ====== BIND BOUTONS ====== */
-  $('saveBtn')?.setAttribute('type','button');
-  $('resetBtn')?.setAttribute('type','button');
-  $('refreshBtn')?.setAttribute('type','button');
-
-  $('saveBtn')?.addEventListener('click', saveSettings);
-  $('resetBtn')?.addEventListener('click', ()=>{
-    localStorage.removeItem(K.history); historyData=[]; localStorage.setItem(K.ecoTot,'0'); ecoTot=0;
-    $('eco') && ($('eco').textContent=''); renderChart(); renderHistoryList(); toast('Historique réinitialisé');
+/* =========================================================
+   Tabs (navigation iOS)
+   ========================================================= */
+document.querySelectorAll('.tab').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(t=>{t.classList.remove('active'); t.setAttribute('aria-selected','false');});
+    btn.classList.add('active'); btn.setAttribute('aria-selected','true');
+    const page=btn.dataset.page;
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    q(`#page-${page}`).classList.add('active');
   });
-  $('refreshBtn')?.addEventListener('click', getRecommendation);
-
-  /* ====== INIT ====== */
-  loadSettingsToUI();
-  renderChart(); renderHistoryList(); renderOperationalTips();
 });
+
+/* =========================================================
+   Settings UI (charge sans écraser storage)
+   ========================================================= */
+function loadSettingsUI(){
+  const map={lat:'lat',lon:'lon',seuilPac:'seuilPac',seuilInsert:'seuilInsert',coutPac:'coutPac',coutInsert:'coutInsert',coutGaz:'coutGaz',hcStart:'hcStart',hcEnd:'hcEnd',tKids:'tKids',tParents:'tParents'};
+  for(const k in map){ const el=$(map[k]); if(el && settings[k]!==undefined) el.value = settings[k]; }
+  setText('eco', ecoTot ? `💰 ${ecoTot.toFixed(2)} €` : '—');
+}
+function saveSettings(){
+  const num=(id)=>{ const v=parseFloat($(id).value); return Number.isFinite(v)?v:settings[id]; };
+  const str=(id)=>$(id).value || settings[id];
+  const ns={
+    lat:num('lat'), lon:num('lon'),
+    seuilPac:num('seuilPac'), seuilInsert:num('seuilInsert'),
+    coutPac:num('coutPac'), coutInsert:num('coutInsert'), coutGaz:num('coutGaz'),
+    hcStart:str('hcStart')||'00:00', hcEnd:str('hcEnd')||'08:00',
+    tKids:str('tKids')||'20:00', tParents:str('tParents')||'23:00'
+  };
+  settings={...settings, ...ns}; Sset(K.settings, settings);
+  toast('Paramètres sauvegardés ✅'); renderOperationalTips(); // refresh volets
+}
+
+/* =========================================================
+   Recommandation + Historique
+   ========================================================= */
+function updateHeaderTag(mode){
+  const el=$('todayTag'); if(!el) return;
+  el.textContent = mode==='PAC'?'Confort doux' : mode==='Insert'?'Hiver modéré' : mode==='Gaz'?'Froid marqué':'Analyse…';
+}
+
+async function fetchToday(){
+  if(!(settings.lat && settings.lon)){ toast('Renseigne latitude/longitude dans Réglages'); return; }
+  updateHeaderTag('loading');
+  try{
+    const url=`https://api.open-meteo.com/v1/forecast?latitude=${settings.lat}&longitude=${settings.lon}&daily=temperature_2m_max,temperature_2m_min&timezone=auto`;
+    const r=await fetch(url); const d=await r.json();
+    const tmin=d?.daily?.temperature_2m_min?.[0]; const tmax=d?.daily?.temperature_2m_max?.[0];
+    if(tmin==null || tmax==null) throw new Error('Données météo indisponibles');
+    const tmoy=(tmin+tmax)/2;
+    setText('kpiTemp', `${tmoy.toFixed(1)} °C`); setText('kpiDesc','Température moyenne prévue');
+
+    let mode='Gaz';
+    if(tmoy >= settings.seuilPac) mode='PAC';
+    else if(tmoy >= settings.seuilInsert) mode='Insert';
+    const cout = mode==='PAC'?settings.coutPac:(mode==='Insert'?settings.coutInsert:settings.coutGaz);
+    q('#chipMode').textContent = `Mode conseillé : ${mode}`;
+    q('#chipCost').textContent = `Coût indicatif : ${(cout||0).toFixed(3)} €/kWh`;
+
+    // Historique
+    historyData.push({date:new Date().toLocaleDateString(), mode, tmoy:Number(tmoy.toFixed(1))});
+    if(historyData.length>30) historyData.shift(); Sset(K.history, historyData);
+
+    // Économies cumulées (réf gaz)
+    const kwh=15; const ref=(settings.coutGaz||0)*kwh; const coutJour=(cout||0)*kwh;
+    ecoTot = ecoTot + (ref - coutJour); localStorage.setItem(K.ecoTot, String(ecoTot));
+    setText('eco', `💰 ${ecoTot.toFixed(2)} €`);
+
+    renderChart(true); renderHistoryList(); renderOperationalTips(tmoy); updateHeaderTag(mode);
+  }catch(e){
+    console.error(e); setText('kpiDesc','Erreur météo');
+    q('#chipMode').textContent='Mode conseillé : —'; q('#chipCost').textContent='Coût indicatif : — €/kWh';
+    updateHeaderTag('Erreur');
+  }
+}
+
+/* =========================================================
+   Volets opérationnels (PAC / Insert)
+   ========================================================= */
+const t2m=(t)=>{const [h,m]=String(t).split(':').map(x=>parseInt(x||'0',10));return h*60+m}
+const m2t=(m)=>{const h=((Math.floor(m/60)%24)+24)%24, mm=("0"+((m%60+60)%60)).slice(-2); return ("0"+h).slice(-2)+":"+mm}
+
+function renderOperationalTips(tmoy=null){
+  const s=settings; const hcS=t2m(s.hcStart||'00:00'); const hcE=t2m(s.hcEnd||'08:00');
+  const preheatStart = Math.max(hcE-120, hcS);
+  $('pacTips').innerHTML = `
+    <li>HC <b>${s.hcStart||'00:00'}</b> → <b>${s.hcEnd||'08:00'}</b> : maintenir (auto/éco).</li>
+    <li>Préchauffe <b>${m2t(preheatStart)}</b> → <b>${s.hcEnd||'08:00'}</b> pour couvrir la matinée en HP.</li>
+    <li>Limiter la PAC <b>18:00–22:00</b> : inertie + éventuel insert.</li>
+    <li>Après <b>${s.tKids||'20:00'}</b> : relance douce 30–60 min si nécessaire.</li>`;
+
+  const ref = (tmoy!==null) ? tmoy : (historyData.slice(-1)[0]?.tmoy ?? null);
+  let ins='';
+  if(ref===null){ ins = `Allumer l’insert si T° moyenne ≤ <b>${(s.seuilPac||5)+2}°C</b> (économie vs PAC en HP).`; }
+  else if(ref <= (s.seuilInsert||-2)){
+    ins = `T° très basse → <b>17:00–18:00</b>. PAC surtout en HC, gaz possible si besoin la nuit.`;
+  } else if(ref <= ((s.seuilPac||5)+2)){
+    ins = `T° modérée (${ref.toFixed(1)}°C) → <b>18:00–19:00</b> pour couvrir la soirée (HP).`;
+  } else {
+    ins = `T° douce (${ref.toFixed(1)}°C) → insert non nécessaire, PAC seule (max HC).`;
+  }
+  ins += `<div style="margin-top:6px">⏱️ Extinction naturelle avant <b>${s.tParents||'23:00'}</b>.</div>`;
+  $('insertTips').innerHTML = ins;
+}
+
+/* =========================================================
+   Chart + History list
+   ========================================================= */
+let chart;
+function renderChart(animated=false){
+  const c=$('historyChart'); if(!c || typeof Chart==='undefined') return;
+  const labels=historyData.map(e=>e.date), vals=historyData.map(e=>e.tmoy);
+  if(chart) chart.destroy();
+  chart=new Chart(c.getContext('2d'),{
+    type:'line',
+    data:{ labels, datasets:[{ label:'Température moyenne (°C)', data:vals,
+      borderColor:'#0a84ff', backgroundColor:'rgba(10,132,255,.16)', tension:.28, pointRadius:3, fill:true }]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      animation: animated ? {duration:700,easing:'easeOutQuart'} : false,
+      plugins:{ legend:{display:false}, tooltip:{mode:'index',intersect:false} },
+      scales:{ x:{ grid:{display:false}, ticks:{ color:'var(--sub)'} },
+               y:{ grid:{ color:'rgba(0,0,0,.08)'}, ticks:{ color:'var(--sub)'} } }
+  });
+}
+function renderHistoryList(){
+  const wrap=$('historyList'); if(!wrap) return;
+  wrap.innerHTML=''; if(!historyData.length){ wrap.innerHTML='<div style="color:var(--sub)">Aucune donnée pour le moment.</div>'; return; }
+  historyData.slice().reverse().forEach(it=>{
+    const color = it.mode==='PAC' ? 'background:color-mix(in srgb, var(--green) 18%, transparent)'
+                : it.mode==='Insert' ? 'background:color-mix(in srgb, var(--orange) 18%, transparent)'
+                : 'background:color-mix(in srgb, var(--red) 18%, transparent)';
+    const row=document.createElement('div');
+    row.className='history-card';
+    row.innerHTML=`<div class="h-left"><div>${it.date}</div><div class="h-mode" style="${color}">${it.mode}</div></div><div>🌡 ${it.tmoy.toFixed(1)}°C</div>`;
+    wrap.appendChild(row);
+  });
+}
+
+/* =========================================================
+   Bind
+   ========================================================= */
+$('refreshBtn')?.addEventListener('click', fetchToday);
+$('resetBtn')?.addEventListener('click', ()=>{
+  localStorage.removeItem(K.history); historyData=[]; localStorage.setItem(K.ecoTot,'0'); ecoTot=0;
+  setText('eco','—'); renderChart(); renderHistoryList(); toast('Historique réinitialisé');
+});
+$('saveBtn')?.addEventListener('click', saveSettings);
+
+/* =========================================================
+   Init
+   ========================================================= */
+loadSettingsUI();
+renderOperationalTips();
+renderChart(); renderHistoryList();
 </script>
+</body>
+</html>
