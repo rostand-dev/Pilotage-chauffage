@@ -1,267 +1,326 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pilotage Chauffage Intelligent</title>
+
+<!-- Icônes & PWA -->
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2563eb">
+
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        background: #f9fafb;
-        color: #333;
-        margin: 0;
-        padding: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-    header {
-        background: #2563eb;
-        color: white;
-        width: 100%;
-        text-align: center;
-        padding: 1rem 0;
-        font-size: 1.5rem;
-    }
-    main {
-        max-width: 500px;
-        background: white;
-        padding: 2rem;
-        margin-top: 1rem;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    .temp {
-        font-size: 1.5rem;
-        margin-bottom: 1rem;
-        color: #2563eb;
-    }
-    .recommend {
-        font-size: 1.1rem;
-        font-weight: bold;
-        margin-top: 1rem;
-    }
-    .icon {
-        font-size: 3rem;
-        margin: 1rem 0;
-    }
-    details {
-        margin-top: 1.5rem;
-    }
-    details summary {
-        cursor: pointer;
-        font-weight: bold;
-        color: #2563eb;
-        margin-bottom: 1rem;
-    }
-    label {
-        display: block;
-        margin: 0.5rem 0 0.2rem;
-    }
-    input {
-        padding: 0.3rem;
-        width: 100%;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-    }
-    button {
-        margin-top: 1rem;
-        padding: 0.5rem 1rem;
-        background: #2563eb;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-    }
-    button:hover {
-        background: #1e4ed8;
-    }
-    canvas {
-        margin-top: 1.5rem;
-    }
-    .eco {
-        font-weight: bold;
-        margin-top: 1rem;
-        font-size: 1.1rem;
-        color: #16a34a;
-    }
+:root{
+  --bg1:#2563eb; --bg2:#1e3a8a; --glass:rgba(255,255,255,.12);
+  --txt:#fff; --accent:#10b981; --accent-2:#059669; --stroke:rgba(255,255,255,.15);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family: Arial, sans-serif;
+  margin:0; padding:0; color:var(--txt);
+  background: radial-gradient(1200px 800px at 20% -10%, #3b82f6 0%, transparent 60%),
+              linear-gradient(135deg, var(--bg1), var(--bg2));
+  display:flex; flex-direction:column; align-items:center;
+}
+
+/* ---- Layout ---- */
+header{width:100%; max-width:1200px; padding:16px 20px; text-align:center; animation:fadeDown .6s ease both}
+h1{margin:0; font-size:1.7rem; letter-spacing:.2px}
+main{flex:1; width:100%; max-width:900px; padding:16px}
+.grid{
+  display:grid; gap:16px;
+  grid-template-columns: 1fr; 
+}
+@media(min-width:820px){ .grid{ grid-template-columns: 1fr 1fr; } }
+
+/* ---- Cards ---- */
+.card{
+  background:var(--glass);
+  border:1px solid var(--stroke);
+  border-radius:16px; padding:16px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+.card:hover{ transform: translateY(-2px); box-shadow: 0 16px 40px rgba(0,0,0,.32); border-color:rgba(255,255,255,.25); }
+
+/* ---- Titles ---- */
+.card h2{margin:0 0 10px 0; font-size:1.15rem; letter-spacing:.2px}
+
+/* ---- Form ---- */
+label{display:block; margin-top:.65rem; font-size:.92rem; opacity:.95}
+input[type="number"]{
+  width:100%; margin-top:.25rem; padding:.55rem .7rem;
+  border-radius:10px; border:1px solid var(--stroke); background:rgba(255,255,255,.08);
+  color:#fff; outline:none; transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
+}
+input::placeholder{color:#e5e7eb99}
+input:focus{ border-color:#93c5fd; background:rgba(255,255,255,.14); box-shadow:0 0 0 3px rgba(147,197,253,.18) }
+
+/* ---- Buttons ---- */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+  background:var(--accent); color:#062b21; border:0;
+  padding:.65rem 1rem; border-radius:12px; font-weight:700; cursor:pointer;
+  box-shadow: 0 6px 16px rgba(16,185,129,.35);
+  transition: transform .15s ease, background .2s ease, box-shadow .2s ease, filter .2s ease;
+}
+.btn:hover{ background:var(--accent-2); box-shadow: 0 10px 24px rgba(5,150,105,.40); filter:saturate(1.05) }
+.btn:active{ transform: translateY(1px) }
+.btn-ghost{
+  background:transparent; color:#fff; border:1px solid var(--stroke);
+  box-shadow:none;
+}
+.btn-ghost:hover{ background:rgba(255,255,255,.08) }
+
+/* ---- Recommendation ---- */
+.reco{min-height:44px; line-height:1.35; margin-top:8px}
+.badge{
+  display:inline-block; padding:.25rem .6rem; border-radius:999px;
+  border:1px solid var(--stroke); background:rgba(255,255,255,.10); font-size:.8rem;
+}
+
+/* ---- Canvas ---- */
+canvas{background:#0b1733; border-radius:12px; border:1px solid var(--stroke)}
+
+/* ---- Animations ---- */
+@keyframes fadeUp{ from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)} }
+@keyframes fadeDown{ from{opacity:0; transform:translateY(-6px)} to{opacity:1; transform:translateY(0)} }
+@keyframes pulseGlow{ 0%{box-shadow:0 0 0 0 rgba(16,185,129,.35)} 70%{box-shadow:0 0 0 14px rgba(16,185,129,0)} 100%{box-shadow:0 0 0 0 rgba(16,185,129,0)} }
+.appear-1{ animation:fadeUp .45s ease .05s both }
+.appear-2{ animation:fadeUp .55s ease .08s both }
+.appear-3{ animation:fadeUp .65s ease .12s both }
+
+/* ---- Footer ---- */
+footer{width:100%; max-width:1200px; padding:14px 20px; text-align:center; opacity:.85}
+.small{font-size:.9rem; opacity:.9}
+
+/* ---- Utility ---- */
+.row{display:flex; gap:8px; flex-wrap:wrap}
+.sep{height:1px; background:var(--stroke); margin:12px 0}
 </style>
 </head>
 <body>
-<header>Pilotage Chauffage Intelligent</header>
+<header>
+  <h1>🏠 Pilotage Chauffage — Assistant quotidien</h1>
+</header>
+
 <main>
-    <div id="date"></div>
-    <div class="temp" id="tempMoy"></div>
-    <div class="icon" id="icon"></div>
-    <div class="recommend" id="recommendation"></div>
-    <div class="eco" id="economies"></div>
+  <div class="grid">
+    <!-- PARAMÈTRES -->
+    <section class="card appear-1">
+      <h2>⚙️ Paramètres</h2>
+      <div class="row">
+        <div style="flex:1">
+          <label>Latitude
+            <input id="lat" type="number" step="0.0001" placeholder="ex. 50.6927">
+          </label>
+        </div>
+        <div style="flex:1">
+          <label>Longitude
+            <input id="lon" type="number" step="0.0001" placeholder="ex. 3.1746">
+          </label>
+        </div>
+      </div>
 
-    <details>
-        <summary>⚙️ Paramètres</summary>
-        <label>Latitude :</label>
-        <input type="number" id="latitude" step="0.0001">
-        <label>Longitude :</label>
-        <input type="number" id="longitude" step="0.0001">
-        
-        <label>Seuil PAC → Insert (°C) :</label>
-        <input type="number" id="seuilInsert" step="0.1">
-        
-        <label>Seuil Insert → Gaz (°C) :</label>
-        <input type="number" id="seuilGaz" step="0.1">
-        
-        <label>Coût PAC HC (€/kWh utile) :</label>
-        <input type="number" id="coutPacHC" step="0.001">
-        
-        <label>Coût PAC HP (€/kWh utile) :</label>
-        <input type="number" id="coutPacHP" step="0.001">
-        
-        <label>Coût bois (€/kWh utile) :</label>
-        <input type="number" id="coutBois" step="0.001">
-        
-        <label>Coût gaz (€/kWh utile) :</label>
-        <input type="number" id="coutGaz" step="0.001">
-        
-        <button onclick="saveSettings()">💾 Sauvegarder</button>
-    </details>
+      <div class="row">
+        <div style="flex:1">
+          <label>Seuil PAC → Insert (°C)
+            <input id="seuilPac" type="number" step="0.1" placeholder="ex. 10">
+          </label>
+        </div>
+        <div style="flex:1">
+          <label>Seuil Insert → Gaz (°C)
+            <input id="seuilInsert" type="number" step="0.1" placeholder="ex. 0">
+          </label>
+        </div>
+      </div>
 
-    <canvas id="chartHistorique" width="400" height="200"></canvas>
+      <div class="row">
+        <div style="flex:1">
+          <label>Coût PAC (€/kWh utile)
+            <input id="coutPac" type="number" step="0.001" placeholder="ex. 0.050">
+          </label>
+        </div>
+        <div style="flex:1">
+          <label>Coût Insert (€/kWh utile)
+            <input id="coutInsert" type="number" step="0.001" placeholder="ex. 0.067">
+          </label>
+        </div>
+        <div style="flex:1">
+          <label>Coût Gaz (€/kWh utile)
+            <input id="coutGaz" type="number" step="0.001" placeholder="ex. 0.120">
+          </label>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <button id="saveBtn" class="btn">💾 Sauvegarder</button>
+        <button id="resetBtn" class="btn btn-ghost">🗑️ Réinitialiser l’historique</button>
+      </div>
+      <div class="sep"></div>
+      <div class="small">Astuce : ajuste les seuils pour déclencher l’insert plus tôt ou retarder l’usage du gaz.</div>
+    </section>
+
+    <!-- JOUR & RECO -->
+    <section class="card appear-2">
+      <h2>📅 Recommandation du jour</h2>
+      <div class="row">
+        <button id="refreshBtn" class="btn" style="animation:pulseGlow 2.2s ease-out infinite">↻ Actualiser</button>
+        <span class="badge" id="todayTag">Analyse…</span>
+      </div>
+      <div id="reco" class="reco"></div>
+      <div class="small" id="eco"></div>
+    </section>
+
+    <!-- HISTO -->
+    <section class="card appear-3" style="grid-column: 1 / -1">
+      <h2>📈 Historique (30 derniers jours)</h2>
+      <canvas id="historyChart" height="220"></canvas>
+    </section>
+  </div>
 </main>
 
+<footer class="small">© 2025 — Optimisation Énergie</footer>
+
 <script>
-// Valeurs par défaut
-const defaults = {
-    latitude: 50.6927,
-    longitude: 3.1746,
-    seuilInsert: 10,
-    seuilGaz: 0,
-    coutPacHC: 0.045,
-    coutPacHP: 0.057,
-    coutBois: 0.067,
-    coutGaz: 0.120
-};
+/* ---------- Stockage ---------- */
+let settings = JSON.parse(localStorage.getItem('settings') || '{}');
+let historyData = JSON.parse(localStorage.getItem('history') || '[]');
 
-// Charger paramètres
-function loadSettings() {
-    let settings = JSON.parse(localStorage.getItem("chauffageSettings")) || defaults;
-    for (const key in settings) {
-        document.getElementById(key).value = settings[key];
+/* ---------- Helpers UI ---------- */
+const $ = (id)=>document.getElementById(id);
+function toast(msg){
+  const n=document.createElement('div');
+  n.textContent=msg;
+  n.style.cssText='position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#111827cc;color:#fff;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(6px);z-index:9999';
+  document.body.appendChild(n); setTimeout(()=>n.remove(),1600);
+}
+function updateTag(text, color='rgba(255,255,255,.10)'){
+  const t=$('todayTag'); t.textContent=text; t.style.background=color;
+}
+
+/* ---------- Paramètres ---------- */
+function saveSettings(){
+  settings = {
+    lat: parseFloat($('lat').value),
+    lon: parseFloat($('lon').value),
+    seuilPac: parseFloat($('seuilPac').value),
+    seuilInsert: parseFloat($('seuilInsert').value),
+    coutPac: parseFloat($('coutPac').value),
+    coutInsert: parseFloat($('coutInsert').value),
+    coutGaz: parseFloat($('coutGaz').value)
+  };
+  localStorage.setItem('settings', JSON.stringify(settings));
+  toast('Paramètres sauvegardés ✅');
+}
+function loadSettings(){
+  if(settings.lat) $('lat').value = settings.lat; else $('lat').value='';
+  if(settings.lon) $('lon').value = settings.lon; else $('lon').value='';
+  if(settings.seuilPac) $('seuilPac').value = settings.seuilPac; else $('seuilPac').value='';
+  if(settings.seuilInsert) $('seuilInsert').value = settings.seuilInsert; else $('seuilInsert').value='';
+  if(settings.coutPac) $('coutPac').value = settings.coutPac; else $('coutPac').value='';
+  if(settings.coutInsert) $('coutInsert').value = settings.coutInsert; else $('coutInsert').value='';
+  if(settings.coutGaz) $('coutGaz').value = settings.coutGaz; else $('coutGaz').value='';
+}
+
+/* ---------- API & Recommandation ---------- */
+async function getRecommendation(){
+  try{
+    if(!settings.lat || !settings.lon){ toast('Renseigne latitude/longitude'); return; }
+    updateTag('Mise à jour…', 'rgba(59,130,246,.25)');
+
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${settings.lat}&longitude=${settings.lon}&daily=temperature_2m_max,temperature_2m_min&timezone=auto`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const tmin = data.daily.temperature_2m_min[0];
+    const tmax = data.daily.temperature_2m_max[0];
+    const tmoy = (tmin + tmax) / 2;
+
+    let mode = 'Gaz', badge='rgba(244,63,94,.25)';
+    if(tmoy >= settings.seuilPac){ mode = 'PAC'; badge='rgba(16,185,129,.30)'; }
+    else if(tmoy >= settings.seuilInsert){ mode = 'Insert'; badge='rgba(245,158,11,.30)'; }
+
+    const cout = mode === 'PAC' ? settings.coutPac : (mode === 'Insert' ? settings.coutInsert : settings.coutGaz);
+    $('reco').style.opacity = 0;
+    setTimeout(()=>{
+      $('reco').innerHTML = `🌡 <strong>${tmoy.toFixed(1)}°C</strong> · Mode conseillé : <strong>${mode}</strong><br>
+      💶 Coût indicatif : <strong>${(cout||0).toFixed(3)}</strong> €/kWh utile`;
+      $('reco').style.transition='opacity .35s ease';
+      $('reco').style.opacity = 1;
+    },120);
+    updateTag(mode==='PAC'?'Confort doux':mode==='Insert'?'Hiver modéré':'Froid marqué', badge);
+
+    // Enregistre l’historique (max 30 points)
+    historyData.push({ date: new Date().toLocaleDateString(), mode, tmoy: Number(tmoy.toFixed(1)) });
+    if(historyData.length>30) historyData.shift();
+    localStorage.setItem('history', JSON.stringify(historyData));
+
+    // Éco cumulées vs 100% gaz (kWh/j fictifs pour l’illustration)
+    const kwhJour = 15;
+    const coutGazRef = (settings.coutGaz||0)*kwhJour;
+    const coutJour = (cout||0)*kwhJour;
+    const ecoTot = (Number(localStorage.getItem('ecoTot')||'0') + (coutGazRef - coutJour));
+    localStorage.setItem('ecoTot', ecoTot);
+    $('eco').textContent = `💰 Économies cumulées (réf. tout gaz) : ${ecoTot.toFixed(2)} €`;
+
+    renderChart(true);
+  }catch(e){
+    console.error(e);
+    updateTag('Erreur météo', 'rgba(244,63,94,.35)');
+    $('reco').textContent = 'Impossible de récupérer la météo. Vérifie ta connexion et les coordonnées GPS.';
+  }
+}
+
+/* ---------- Chart ---------- */
+let chart;
+function renderChart(animated=false){
+  const ctx = $('historyChart').getContext('2d');
+  const labels = historyData.map(e=>e.date);
+  const valeurs = historyData.map(e=>e.tmoy);
+  if(chart) chart.destroy();
+  chart = new Chart(ctx,{
+    type:'line',
+    data:{
+      labels,
+      datasets:[{
+        label:'Température moyenne (°C)',
+        data: valeurs,
+        borderColor:'#10b981',
+        backgroundColor:'rgba(16,185,129,.18)',
+        pointRadius:3, pointHoverRadius:5, tension:.25, fill:true
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      animation: animated ? {duration:700, easing:'easeOutQuart'} : false,
+      plugins:{ legend:{display:false}, tooltip:{mode:'index',intersect:false} },
+      scales:{
+        x:{ grid:{display:false}, ticks:{color:'#e5e7eb'} },
+        y:{ grid:{color:'rgba(255,255,255,.12)'}, ticks:{color:'#e5e7eb'} }
+      }
     }
-    return settings;
+  });
 }
 
-// Sauvegarder paramètres
-function saveSettings() {
-    let settings = {};
-    for (const key in defaults) {
-        settings[key] = parseFloat(document.getElementById(key).value);
-    }
-    localStorage.setItem("chauffageSettings", JSON.stringify(settings));
-    alert("Paramètres sauvegardés ✅");
-    getWeatherAndRecommend();
-}
+/* ---------- Actions ---------- */
+$('saveBtn').addEventListener('click', saveSettings);
+$('resetBtn').addEventListener('click', ()=>{
+  localStorage.removeItem('history'); historyData=[]; localStorage.setItem('ecoTot','0');
+  $('eco').textContent=''; renderChart();
+  toast('Historique réinitialisé');
+});
+$('refreshBtn').addEventListener('click', ()=>{ getRecommendation(); });
 
-// Charger historique
-function loadHistorique() {
-    return JSON.parse(localStorage.getItem("chauffageHistorique")) || [];
-}
-
-// Sauvegarder historique
-function saveHistorique(entry) {
-    let historique = loadHistorique();
-    historique.push(entry);
-    localStorage.setItem("chauffageHistorique", JSON.stringify(historique));
-}
-
-// Afficher graphique + économies
-function afficherGraphiqueEtEconomies() {
-    const historique = loadHistorique();
-    const labels = historique.map(e => e.date);
-    const couts = historique.map(e => e.coutJour);
-    const settings = loadSettings();
-
-    // Calcul économies cumulées vs 100 % gaz
-    const coutsGaz = historique.map(e => e.kwhJour * settings.coutGaz);
-    let economieTotale = 0;
-    for (let i = 0; i < historique.length; i++) {
-        economieTotale += coutsGaz[i] - couts[i];
-    }
-
-    document.getElementById("economies").innerText =
-        `💰 Économies cumulées vs 100% gaz : ${economieTotale.toFixed(2)} €`;
-
-    const ctx = document.getElementById('chartHistorique').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Coût chauffage/jour (€)',
-                data: couts,
-                borderColor: '#2563eb',
-                backgroundColor: 'rgba(37, 99, 235, 0.2)',
-                fill: true,
-                tension: 0.2
-            }]
-        }
-    });
-}
-
-// Récupérer météo et calculer recommandation
-function getWeatherAndRecommend() {
-    const settings = loadSettings();
-    const today = new Date().toLocaleDateString("fr-FR", {
-        weekday: "long", year: "numeric", month: "long", day: "numeric"
-    });
-    document.getElementById("date").innerText = today;
-
-    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${settings.latitude}&longitude=${settings.longitude}&daily=temperature_2m_max,temperature_2m_min&timezone=auto`)
-        .then(res => res.json())
-        .then(data => {
-            const min = data.daily.temperature_2m_min[0];
-            const max = data.daily.temperature_2m_max[0];
-            const moyenne = ((min + max) / 2).toFixed(1);
-            document.getElementById("tempMoy").innerText = `🌡 Température moyenne : ${moyenne} °C`;
-
-            let recommendation = "";
-            let icon = "";
-            let coutJour = 0;
-            let kwhJour = 15; // valeur fictive pour calcul économie, à affiner selon besoins réels
-
-            if (moyenne > settings.seuilInsert) {
-                recommendation = `Utiliser la PAC seule (maximiser les HC)`;
-                icon = "❄️";
-                coutJour = settings.coutPacHC * 5 + settings.coutPacHP * 10;
-            } else if (moyenne > settings.seuilGaz) {
-                recommendation = `PAC en priorité + Insert en soirée`;
-                icon = "🔥";
-                coutJour = (settings.coutPacHC * 3 + settings.coutPacHP * 5) + settings.coutBois * 7;
-            } else {
-                recommendation = `Insert bois principal + PAC en HC, Gaz si besoin`;
-                icon = "🪵";
-                coutJour = (settings.coutPacHC * 2) + (settings.coutBois * 8) + (settings.coutGaz * 5);
-            }
-
-            document.getElementById("recommendation").innerText =
-                `${recommendation} | Estimation coût jour : ${coutJour.toFixed(2)} €`;
-            document.getElementById("icon").innerText = icon;
-
-            saveHistorique({
-                date: today,
-                temp: parseFloat(moyenne),
-                recommandation: recommendation,
-                coutJour: parseFloat(coutJour.toFixed(2)),
-                kwhJour: kwhJour
-            });
-            afficherGraphiqueEtEconomies();
-        })
-        .catch(err => {
-            document.getElementById("tempMoy").innerText = "Erreur récupération météo";
-            console.error(err);
-        });
-}
-
-getWeatherAndRecommend();
+/* ---------- Init ---------- */
+loadSettings();
+renderChart();
 </script>
 </body>
 </html>
