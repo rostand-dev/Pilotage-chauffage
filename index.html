@@ -5,159 +5,84 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pilotage Chauffage Intelligent</title>
 
-<!-- Icônes & PWA -->
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#2563eb">
-
-<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-:root{
-  --bg1:#2563eb; --bg2:#1e3a8a; --glass:rgba(255,255,255,.12);
-  --txt:#fff; --accent:#10b981; --accent-2:#059669; --stroke:rgba(255,255,255,.15);
-}
-*{box-sizing:border-box}
-html,body{height:100%}
-body{
-  font-family: Arial, sans-serif;
-  margin:0; padding:0; color:var(--txt);
-  background: radial-gradient(1200px 800px at 20% -10%, #3b82f6 0%, transparent 60%),
-              linear-gradient(135deg, var(--bg1), var(--bg2));
-  display:flex; flex-direction:column; align-items:center;
-}
-
-/* ---- Layout ---- */
-header{width:100%; max-width:1200px; padding:16px 20px; text-align:center; animation:fadeDown .6s ease both}
-h1{margin:0; font-size:1.7rem; letter-spacing:.2px}
-main{flex:1; width:100%; max-width:900px; padding:16px}
-.grid{
-  display:grid; gap:16px;
-  grid-template-columns: 1fr; 
-}
-@media(min-width:820px){ .grid{ grid-template-columns: 1fr 1fr; } }
-
-/* ---- Cards ---- */
-.card{
-  background:var(--glass);
-  border:1px solid var(--stroke);
-  border-radius:16px; padding:16px;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 10px 30px rgba(0,0,0,.25);
-  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
-}
-.card:hover{ transform: translateY(-2px); box-shadow: 0 16px 40px rgba(0,0,0,.32); border-color:rgba(255,255,255,.25); }
-
-/* ---- Titles ---- */
-.card h2{margin:0 0 10px 0; font-size:1.15rem; letter-spacing:.2px}
-
-/* ---- Form ---- */
-label{display:block; margin-top:.65rem; font-size:.92rem; opacity:.95}
-input[type="number"]{
-  width:100%; margin-top:.25rem; padding:.55rem .7rem;
-  border-radius:10px; border:1px solid var(--stroke); background:rgba(255,255,255,.08);
-  color:#fff; outline:none; transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
-}
-input::placeholder{color:#e5e7eb99}
-input:focus{ border-color:#93c5fd; background:rgba(255,255,255,.14); box-shadow:0 0 0 3px rgba(147,197,253,.18) }
-
-/* ---- Buttons ---- */
-.btn{
-  display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
-  background:var(--accent); color:#062b21; border:0;
-  padding:.65rem 1rem; border-radius:12px; font-weight:700; cursor:pointer;
-  box-shadow: 0 6px 16px rgba(16,185,129,.35);
-  transition: transform .15s ease, background .2s ease, box-shadow .2s ease, filter .2s ease;
-}
-.btn:hover{ background:var(--accent-2); box-shadow: 0 10px 24px rgba(5,150,105,.40); filter:saturate(1.05) }
-.btn:active{ transform: translateY(1px) }
-.btn-ghost{
-  background:transparent; color:#fff; border:1px solid var(--stroke);
-  box-shadow:none;
-}
-.btn-ghost:hover{ background:rgba(255,255,255,.08) }
-
-/* ---- Recommendation ---- */
-.reco{min-height:44px; line-height:1.35; margin-top:8px}
-.badge{
-  display:inline-block; padding:.25rem .6rem; border-radius:999px;
-  border:1px solid var(--stroke); background:rgba(255,255,255,.10); font-size:.8rem;
-}
-
-/* ---- Canvas ---- */
+:root{ --bg1:#2563eb; --bg2:#1e3a8a; --glass:rgba(255,255,255,.12); --txt:#fff; --accent:#10b981; --accent-2:#059669; --stroke:rgba(255,255,255,.15); }
+*{box-sizing:border-box} html,body{height:100%}
+body{font-family:Arial,system-ui,Segoe UI; margin:0; color:var(--txt);
+  background: radial-gradient(1200px 800px at 20% -10%, #3b82f6 0%, transparent 60%), linear-gradient(135deg,var(--bg1),var(--bg2));
+  display:flex; flex-direction:column; align-items:center;}
+header{width:100%; max-width:1200px; padding:16px 20px; text-align:center;}
+h1{margin:0; font-size:1.7rem}
+main{flex:1; width:100%; max-width:920px; padding:16px}
+.grid{display:grid; gap:16px; grid-template-columns:1fr}
+@media(min-width:840px){.grid{grid-template-columns:1fr 1fr}}
+.card{background:var(--glass); border:1px solid var(--stroke); border-radius:16px; padding:16px;
+  backdrop-filter:blur(8px); box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.card h2{margin:0 0 10px 0; font-size:1.15rem}
+label{display:block; margin-top:.6rem; font-size:.92rem}
+input[type="number"],input[type="time"]{width:100%; margin-top:.25rem; padding:.55rem .7rem; border-radius:10px; border:1px solid var(--stroke); background:rgba(255,255,255,.08); color:#fff}
+.btn{display:inline-flex; align-items:center; gap:.5rem; background:var(--accent); color:#062b21; border:0; padding:.6rem 1rem; border-radius:12px; font-weight:700; cursor:pointer}
+.btn:hover{background:var(--accent-2)}
+.btn-ghost{background:transparent; color:#fff; border:1px solid var(--stroke)}
+.badge{display:inline-block; padding:.25rem .6rem; border-radius:999px; border:1px solid var(--stroke); background:rgba(255,255,255,.10); font-size:.8rem}
+.reco{min-height:44px; margin-top:8px}
 canvas{background:#0b1733; border-radius:12px; border:1px solid var(--stroke)}
-
-/* ---- Animations ---- */
-@keyframes fadeUp{ from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)} }
-@keyframes fadeDown{ from{opacity:0; transform:translateY(-6px)} to{opacity:1; transform:translateY(0)} }
-@keyframes pulseGlow{ 0%{box-shadow:0 0 0 0 rgba(16,185,129,.35)} 70%{box-shadow:0 0 0 14px rgba(16,185,129,0)} 100%{box-shadow:0 0 0 0 rgba(16,185,129,0)} }
-.appear-1{ animation:fadeUp .45s ease .05s both }
-.appear-2{ animation:fadeUp .55s ease .08s both }
-.appear-3{ animation:fadeUp .65s ease .12s both }
-
-/* ---- Footer ---- */
-footer{width:100%; max-width:1200px; padding:14px 20px; text-align:center; opacity:.85}
+.chart-wrap{height:220px}
+.history-list{display:flex; flex-direction:column; gap:10px; margin-top:10px}
+.history-card{display:flex; justify-content:space-between; gap:10px; background:rgba(255,255,255,.08); border:1px solid var(--stroke); border-radius:12px; padding:10px 12px}
+.h-left{display:flex; align-items:center; gap:10px}
+.h-mode{padding:.2rem .5rem; border-radius:999px; border:1px solid var(--stroke)}
 .small{font-size:.9rem; opacity:.9}
-
-/* ---- Utility ---- */
 .row{display:flex; gap:8px; flex-wrap:wrap}
 .sep{height:1px; background:var(--stroke); margin:12px 0}
 </style>
 </head>
 <body>
-<header>
-  <h1>🏠 Pilotage Chauffage — Assistant quotidien</h1>
-</header>
+<header><h1>🏠 Pilotage Chauffage — Assistant quotidien</h1></header>
 
 <main>
   <div class="grid">
     <!-- PARAMÈTRES -->
-    <section class="card appear-1">
+    <section class="card">
       <h2>⚙️ Paramètres</h2>
       <div class="row">
         <div style="flex:1">
-          <label>Latitude
-            <input id="lat" type="number" step="0.0001" placeholder="ex. 50.6927">
-          </label>
+          <label>Latitude <input id="lat" type="number" step="0.0001" placeholder="48.8566"></label>
         </div>
         <div style="flex:1">
-          <label>Longitude
-            <input id="lon" type="number" step="0.0001" placeholder="ex. 3.1746">
-          </label>
+          <label>Longitude <input id="lon" type="number" step="0.0001" placeholder="2.3522"></label>
         </div>
       </div>
 
       <div class="row">
         <div style="flex:1">
-          <label>Seuil PAC → Insert (°C)
-            <input id="seuilPac" type="number" step="0.1" placeholder="ex. 10">
-          </label>
+          <label>Seuil PAC → Insert (°C) <input id="seuilPac" type="number" step="0.1" placeholder="5"></label>
         </div>
         <div style="flex:1">
-          <label>Seuil Insert → Gaz (°C)
-            <input id="seuilInsert" type="number" step="0.1" placeholder="ex. 0">
-          </label>
+          <label>Seuil Insert → Gaz (°C) <input id="seuilInsert" type="number" step="0.1" placeholder="-2"></label>
         </div>
       </div>
 
       <div class="row">
-        <div style="flex:1">
-          <label>Coût PAC (€/kWh utile)
-            <input id="coutPac" type="number" step="0.001" placeholder="ex. 0.050">
-          </label>
-        </div>
-        <div style="flex:1">
-          <label>Coût Insert (€/kWh utile)
-            <input id="coutInsert" type="number" step="0.001" placeholder="ex. 0.067">
-          </label>
-        </div>
-        <div style="flex:1">
-          <label>Coût Gaz (€/kWh utile)
-            <input id="coutGaz" type="number" step="0.001" placeholder="ex. 0.120">
-          </label>
-        </div>
+        <div style="flex:1"><label>Coût PAC (€/kWh utile) <input id="coutPac" type="number" step="0.001" placeholder="0.060"></label></div>
+        <div style="flex:1"><label>Coût Insert (€/kWh utile) <input id="coutInsert" type="number" step="0.001" placeholder="0.067"></label></div>
+        <div style="flex:1"><label>Coût Gaz (€/kWh utile) <input id="coutGaz" type="number" step="0.001" placeholder="0.120"></label></div>
+      </div>
+
+      <div class="sep"></div>
+      <div class="row">
+        <div style="flex:1"><label>Heures Creuses — début <input id="hcStart" type="time" value="00:00"></label></div>
+        <div style="flex:1"><label>Heures Creuses — fin <input id="hcEnd" type="time" value="08:00"></label></div>
+      </div>
+      <div class="row">
+        <div style="flex:1"><label>Coucher enfants <input id="tKids" type="time" value="20:00"></label></div>
+        <div style="flex:1"><label>Coucher parents <input id="tParents" type="time" value="23:00"></label></div>
       </div>
 
       <div class="row" style="margin-top:10px">
@@ -165,24 +90,37 @@ footer{width:100%; max-width:1200px; padding:14px 20px; text-align:center; opaci
         <button id="resetBtn" class="btn btn-ghost">🗑️ Réinitialiser l’historique</button>
       </div>
       <div class="sep"></div>
-      <div class="small">Astuce : ajuste les seuils pour déclencher l’insert plus tôt ou retarder l’usage du gaz.</div>
+      <div class="small">Astuce : adapte les HC à ton contrat. Recommandé chez toi : <b>00:00 → 08:00</b>.</div>
     </section>
 
-    <!-- JOUR & RECO -->
-    <section class="card appear-2">
+    <!-- RECOMMANDATION JOUR + VOLETS -->
+    <section class="card">
       <h2>📅 Recommandation du jour</h2>
       <div class="row">
-        <button id="refreshBtn" class="btn" style="animation:pulseGlow 2.2s ease-out infinite">↻ Actualiser</button>
+        <button id="refreshBtn" class="btn">↻ Actualiser</button>
         <span class="badge" id="todayTag">Analyse…</span>
       </div>
       <div id="reco" class="reco"></div>
       <div class="small" id="eco"></div>
+
+      <div class="sep"></div>
+
+      <!-- Volet 1 : Consignes PAC -->
+      <h2>⚡ Consignes PAC — maximiser HC / limiter HP</h2>
+      <ul id="pacTips" class="small" style="line-height:1.5; padding-left:18px; margin:6px 0"></ul>
+
+      <div class="sep"></div>
+
+      <!-- Volet 2 : Quand allumer l’insert -->
+      <h2>🔥 Quand allumer l’insert</h2>
+      <div id="insertTips" class="small" style="line-height:1.5"></div>
     </section>
 
-    <!-- HISTO -->
-    <section class="card appear-3" style="grid-column: 1 / -1">
+    <!-- HISTORIQUE + GRAPH -->
+    <section class="card" style="grid-column:1 / -1">
       <h2>📈 Historique (30 derniers jours)</h2>
-      <canvas id="historyChart" height="220"></canvas>
+      <div class="chart-wrap"><canvas id="historyChart"></canvas></div>
+      <div id="historyList" class="history-list"></div>
     </section>
   </div>
 </main>
@@ -193,18 +131,7 @@ footer{width:100%; max-width:1200px; padding:14px 20px; text-align:center; opaci
 /* ---------- Stockage ---------- */
 let settings = JSON.parse(localStorage.getItem('settings') || '{}');
 let historyData = JSON.parse(localStorage.getItem('history') || '[]');
-
-/* ---------- Helpers UI ---------- */
 const $ = (id)=>document.getElementById(id);
-function toast(msg){
-  const n=document.createElement('div');
-  n.textContent=msg;
-  n.style.cssText='position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#111827cc;color:#fff;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(6px);z-index:9999';
-  document.body.appendChild(n); setTimeout(()=>n.remove(),1600);
-}
-function updateTag(text, color='rgba(255,255,255,.10)'){
-  const t=$('todayTag'); t.textContent=text; t.style.background=color;
-}
 
 /* ---------- Paramètres ---------- */
 function saveSettings(){
@@ -215,97 +142,130 @@ function saveSettings(){
     seuilInsert: parseFloat($('seuilInsert').value),
     coutPac: parseFloat($('coutPac').value),
     coutInsert: parseFloat($('coutInsert').value),
-    coutGaz: parseFloat($('coutGaz').value)
+    coutGaz: parseFloat($('coutGaz').value),
+    hcStart: $('hcStart').value || '00:00',
+    hcEnd: $('hcEnd').value || '08:00',
+    tKids: $('tKids').value || '20:00',
+    tParents: $('tParents').value || '23:00'
   };
   localStorage.setItem('settings', JSON.stringify(settings));
-  toast('Paramètres sauvegardés ✅');
+  alert('Paramètres sauvegardés ✅');
+  renderOperationalTips(); // met à jour les deux volets
 }
 function loadSettings(){
-  if(settings.lat) $('lat').value = settings.lat; else $('lat').value='';
-  if(settings.lon) $('lon').value = settings.lon; else $('lon').value='';
-  if(settings.seuilPac) $('seuilPac').value = settings.seuilPac; else $('seuilPac').value='';
-  if(settings.seuilInsert) $('seuilInsert').value = settings.seuilInsert; else $('seuilInsert').value='';
-  if(settings.coutPac) $('coutPac').value = settings.coutPac; else $('coutPac').value='';
-  if(settings.coutInsert) $('coutInsert').value = settings.coutInsert; else $('coutInsert').value='';
-  if(settings.coutGaz) $('coutGaz').value = settings.coutGaz; else $('coutGaz').value='';
+  const s=settings;
+  if(s.lat) $('lat').value=s.lat; if(s.lon) $('lon').value=s.lon;
+  if(s.seuilPac) $('seuilPac').value=s.seuilPac; if(s.seuilInsert) $('seuilInsert').value=s.seuilInsert;
+  if(s.coutPac) $('coutPac').value=s.coutPac; if(s.coutInsert) $('coutInsert').value=s.coutInsert; if(s.coutGaz) $('coutGaz').value=s.coutGaz;
+  if(s.hcStart) $('hcStart').value=s.hcStart; if(s.hcEnd) $('hcEnd').value=s.hcEnd;
+  if(s.tKids) $('tKids').value=s.tKids; if(s.tParents) $('tParents').value=s.tParents;
 }
 
-/* ---------- API & Recommandation ---------- */
+/* ---------- API & Reco ---------- */
 async function getRecommendation(){
   try{
-    if(!settings.lat || !settings.lon){ toast('Renseigne latitude/longitude'); return; }
-    updateTag('Mise à jour…', 'rgba(59,130,246,.25)');
+    if(!settings.lat || !settings.lon){ alert('Renseigne latitude/longitude'); return; }
+    $('todayTag').textContent='Mise à jour…';
 
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${settings.lat}&longitude=${settings.lon}&daily=temperature_2m_max,temperature_2m_min&timezone=auto`;
-    const res = await fetch(url);
-    const data = await res.json();
-    const tmin = data.daily.temperature_2m_min[0];
-    const tmax = data.daily.temperature_2m_max[0];
-    const tmoy = (tmin + tmax) / 2;
+    const url=`https://api.open-meteo.com/v1/forecast?latitude=${settings.lat}&longitude=${settings.lon}&daily=temperature_2m_max,temperature_2m_min&timezone=auto`;
+    const res=await fetch(url); const data=await res.json();
+    const tmin=data.daily.temperature_2m_min[0], tmax=data.daily.temperature_2m_max[0], tmoy=(tmin+tmax)/2;
 
-    let mode = 'Gaz', badge='rgba(244,63,94,.25)';
-    if(tmoy >= settings.seuilPac){ mode = 'PAC'; badge='rgba(16,185,129,.30)'; }
-    else if(tmoy >= settings.seuilInsert){ mode = 'Insert'; badge='rgba(245,158,11,.30)'; }
+    let mode='Gaz', badge='rgba(244,63,94,.25)';
+    if(tmoy >= settings.seuilPac){ mode='PAC'; badge='rgba(16,185,129,.30)'; }
+    else if(tmoy >= settings.seuilInsert){ mode='Insert'; badge='rgba(245,158,11,.30)'; }
 
-    const cout = mode === 'PAC' ? settings.coutPac : (mode === 'Insert' ? settings.coutInsert : settings.coutGaz);
-    $('reco').style.opacity = 0;
-    setTimeout(()=>{
-      $('reco').innerHTML = `🌡 <strong>${tmoy.toFixed(1)}°C</strong> · Mode conseillé : <strong>${mode}</strong><br>
-      💶 Coût indicatif : <strong>${(cout||0).toFixed(3)}</strong> €/kWh utile`;
-      $('reco').style.transition='opacity .35s ease';
-      $('reco').style.opacity = 1;
-    },120);
-    updateTag(mode==='PAC'?'Confort doux':mode==='Insert'?'Hiver modéré':'Froid marqué', badge);
+    const cout = mode==='PAC'?settings.coutPac:(mode==='Insert'?settings.coutInsert:settings.coutGaz);
+    $('reco').innerHTML = `🌡 <b>${tmoy.toFixed(1)}°C</b> · Mode conseillé : <b>${mode}</b><br>💶 Coût indicatif : <b>${(cout||0).toFixed(3)}</b> €/kWh utile`;
+    $('todayTag').textContent = mode==='PAC'?'Confort doux':(mode==='Insert'?'Hiver modéré':'Froid marqué');
+    $('todayTag').style.background = badge;
 
-    // Enregistre l’historique (max 30 points)
-    historyData.push({ date: new Date().toLocaleDateString(), mode, tmoy: Number(tmoy.toFixed(1)) });
+    // Historique
+    historyData.push({date:new Date().toLocaleDateString(), mode, tmoy:Number(tmoy.toFixed(1))});
     if(historyData.length>30) historyData.shift();
     localStorage.setItem('history', JSON.stringify(historyData));
 
-    // Éco cumulées vs 100% gaz (kWh/j fictifs pour l’illustration)
-    const kwhJour = 15;
-    const coutGazRef = (settings.coutGaz||0)*kwhJour;
-    const coutJour = (cout||0)*kwhJour;
-    const ecoTot = (Number(localStorage.getItem('ecoTot')||'0') + (coutGazRef - coutJour));
+    // Économies cumulées simplifiées
+    const kwhJour=15, coutGazRef=(settings.coutGaz||0)*kwhJour, coutJour=(cout||0)*kwhJour;
+    const ecoTot=(Number(localStorage.getItem('ecoTot')||'0') + (coutGazRef - coutJour));
     localStorage.setItem('ecoTot', ecoTot);
     $('eco').textContent = `💰 Économies cumulées (réf. tout gaz) : ${ecoTot.toFixed(2)} €`;
 
-    renderChart(true);
+    renderChart(true); renderHistoryList(); renderOperationalTips(tmoy);
   }catch(e){
     console.error(e);
-    updateTag('Erreur météo', 'rgba(244,63,94,.35)');
-    $('reco').textContent = 'Impossible de récupérer la météo. Vérifie ta connexion et les coordonnées GPS.';
+    $('reco').textContent='Erreur météo — vérifie la connexion et les coordonnées GPS.';
+    $('todayTag').textContent='Erreur';
+    $('todayTag').style.background='rgba(244,63,94,.35)';
   }
 }
 
-/* ---------- Chart ---------- */
+/* ---------- Volets opérationnels (PAC & Insert) ---------- */
+function timeStrToMin(t){const [h,m]=t.split(':').map(n=>parseInt(n,10));return h*60+m}
+function minToTimeStr(m){const h=Math.floor(m/60)%24; const mm=("0"+(m%60)).slice(-2); return ("0"+h).slice(-2)+":"+mm}
+
+function renderOperationalTips(tmoy=null){
+  const s=settings;
+  const hcStartMin=timeStrToMin(s.hcStart||'00:00');
+  const hcEndMin=timeStrToMin(s.hcEnd||'08:00');
+  const kidsMin=timeStrToMin(s.tKids||'20:00');
+  const parentsMin=timeStrToMin(s.tParents||'23:00');
+
+  // --- Volet PAC : stratégie simple et claire ---
+  // 1) Chauffe de fond pendant HC
+  const hcNight = `Entre <b>${s.hcStart||'00:00'}</b> et <b>${s.hcEnd||'08:00'}</b> : maintenir la température (mode auto/éco).`;
+  // 2) Préchauffe de fin de HC (2h avant fin)
+  const preheatStart = Math.max(hcEndMin-120, hcStartMin);
+  const preheat = `Faire une <b>montée en température</b> de <b>${minToTimeStr(preheatStart)}</b> à <b>${s.hcEnd||'08:00'}</b> pour couvrir le matin en HP.`;
+  // 3) Éviter HP du soir : 18h–22h (plage indicative)
+  const avoid = `Limiter la PAC entre <b>18:00</b> et <b>22:00</b> (HP). S'appuyer sur l'inertie + éventuel appoint insert.`;
+  // 4) Relance douce après coucher enfants si besoin
+  const afterKids = `Après <b>${s.tKids||'20:00'}</b>, cibler 30–60 min max si la température chute (confort sans surconsommer).`;
+
+  $('pacTips').innerHTML = `<li>${hcNight}</li><li>${preheat}</li><li>${avoid}</li><li>${afterKids}</li>`;
+
+  // --- Volet Insert : quand l’allumer ---
+  // Règle : si tmoy ≤ seuilPac+2 → allumer en début de soirée (18:00–19:00).
+  // Si tmoy ≤ seuilInsert → allumer plus tôt (17:00–18:00) et laisser braises couvrir la soirée.
+  const refTmoy = (tmoy!==null)? tmoy : (historyData.slice(-1)[0]?.tmoy ?? null);
+  let insertHTML='';
+  if(refTmoy===null){
+    insertHTML = `Allumer l’insert si la température moyenne prévue est ≤ <b>${(s.seuilPac||5)+2}°C</b> (économie vs PAC en HP).`;
+  }else{
+    if(refTmoy <= (s.seuilInsert||-2)){
+      insertHTML = `Température ⟨ <b>${s.seuilInsert||-2}°C</b> → <b>allumer vers 17:00–18:00</b>.
+      Laisser la PAC tourner surtout en HC. Le gaz reste en secours si besoin nocturne.`;
+    }else if(refTmoy <= ((s.seuilPac||5)+2)){
+      insertHTML = `Température modérée (≈ <b>${refTmoy.toFixed(1)}°C</b>) → <b>allumer vers 18:00–19:00</b> pour couvrir la soirée (HP) et soulager la PAC.`;
+    }else{
+      insertHTML = `Température douce (≈ <b>${refTmoy.toFixed(1)}°C</b>) → l’insert n’est pas nécessaire. Prioriser la PAC en HC.`;
+    }
+  }
+  insertHTML += `<div style="margin-top:6px">⏱️ Extinction naturelle avant <b>${settings.tParents||'23:00'}</b> : confort garanti, coût minimal.</div>`;
+  $('insertTips').innerHTML = insertHTML;
+}
+
+/* ---------- Historique (graph + cartes) ---------- */
 let chart;
 function renderChart(animated=false){
-  const ctx = $('historyChart').getContext('2d');
-  const labels = historyData.map(e=>e.date);
-  const valeurs = historyData.map(e=>e.tmoy);
+  const ctx=$('historyChart').getContext('2d');
+  const labels=historyData.map(e=>e.date);
+  const values=historyData.map(e=>e.tmoy);
   if(chart) chart.destroy();
-  chart = new Chart(ctx,{
-    type:'line',
-    data:{
-      labels,
-      datasets:[{
-        label:'Température moyenne (°C)',
-        data: valeurs,
-        borderColor:'#10b981',
-        backgroundColor:'rgba(16,185,129,.18)',
-        pointRadius:3, pointHoverRadius:5, tension:.25, fill:true
-      }]
-    },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      animation: animated ? {duration:700, easing:'easeOutQuart'} : false,
-      plugins:{ legend:{display:false}, tooltip:{mode:'index',intersect:false} },
-      scales:{
-        x:{ grid:{display:false}, ticks:{color:'#e5e7eb'} },
-        y:{ grid:{color:'rgba(255,255,255,.12)'}, ticks:{color:'#e5e7eb'} }
-      }
-    }
+  chart=new Chart(ctx,{type:'line',data:{labels,
+    datasets:[{label:'Température moyenne (°C)',data:values,borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.18)',tension:.25,fill:true,pointRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:animated?{duration:700,easing:'easeOutQuart'}:false,
+      plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#e5e7eb'}},y:{grid:{color:'rgba(255,255,255,.12)'},ticks:{color:'#e5e7eb'}}}});}
+
+function renderHistoryList(){
+  const wrap=$('historyList'); wrap.innerHTML='';
+  if(!historyData.length){wrap.innerHTML='<div class="small" style="opacity:.8">Aucune donnée pour le moment.</div>'; return;}
+  historyData.slice().reverse().forEach(it=>{
+    const card=document.createElement('div'); card.className='history-card';
+    const modeColor=it.mode==='PAC'?'rgba(16,185,129,.30)':(it.mode==='Insert'?'rgba(245,158,11,.30)':'rgba(244,63,94,.30)');
+    card.innerHTML=`<div class="h-left"><div class="h-date">${it.date}</div><div class="h-mode" style="background:${modeColor}">${it.mode}</div></div>
+                    <div class="h-temp">🌡 ${it.tmoy.toFixed(1)}°C</div>`;
+    wrap.appendChild(card);
   });
 }
 
@@ -313,14 +273,14 @@ function renderChart(animated=false){
 $('saveBtn').addEventListener('click', saveSettings);
 $('resetBtn').addEventListener('click', ()=>{
   localStorage.removeItem('history'); historyData=[]; localStorage.setItem('ecoTot','0');
-  $('eco').textContent=''; renderChart();
-  toast('Historique réinitialisé');
+  $('eco').textContent=''; renderChart(); renderHistoryList();
+  alert('Historique réinitialisé');
 });
-$('refreshBtn').addEventListener('click', ()=>{ getRecommendation(); });
+$('refreshBtn').addEventListener('click', ()=> getRecommendation());
 
 /* ---------- Init ---------- */
 loadSettings();
-renderChart();
+renderChart(); renderHistoryList(); renderOperationalTips();
 </script>
 </body>
 </html>
