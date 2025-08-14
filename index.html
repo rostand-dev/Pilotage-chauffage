@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pilotage Chauffage Intelligent</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f9fafb;
+        color: #333;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    header {
+        background: #2563eb;
+        color: white;
+        width: 100%;
+        text-align: center;
+        padding: 1rem 0;
+        font-size: 1.5rem;
+    }
+    main {
+        max-width: 500px;
+        background: white;
+        padding: 2rem;
+        margin-top: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .temp {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        color: #2563eb;
+    }
+    .recommend {
+        font-size: 1.1rem;
+        font-weight: bold;
+        margin-top: 1rem;
+    }
+    .icon {
+        font-size: 3rem;
+        margin: 1rem 0;
+    }
+    details {
+        margin-top: 1.5rem;
+    }
+    details summary {
+        cursor: pointer;
+        font-weight: bold;
+        color: #2563eb;
+        margin-bottom: 1rem;
+    }
+    label {
+        display: block;
+        margin: 0.5rem 0 0.2rem;
+    }
+    input {
+        padding: 0.3rem;
+        width: 100%;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    button {
+        margin-top: 1rem;
+        padding: 0.5rem 1rem;
+        background: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    button:hover {
+        background: #1e4ed8;
+    }
+    canvas {
+        margin-top: 1.5rem;
+    }
+    .eco {
+        font-weight: bold;
+        margin-top: 1rem;
+        font-size: 1.1rem;
+        color: #16a34a;
+    }
+</style>
+</head>
+<body>
+<header>Pilotage Chauffage Intelligent</header>
+<main>
+    <div id="date"></div>
+    <div class="temp" id="tempMoy"></div>
+    <div class="icon" id="icon"></div>
+    <div class="recommend" id="recommendation"></div>
+    <div class="eco" id="economies"></div>
+
+    <details>
+        <summary>⚙️ Paramètres</summary>
+        <label>Latitude :</label>
+        <input type="number" id="latitude" step="0.0001">
+        <label>Longitude :</label>
+        <input type="number" id="longitude" step="0.0001">
+        
+        <label>Seuil PAC → Insert (°C) :</label>
+        <input type="number" id="seuilInsert" step="0.1">
+        
+        <label>Seuil Insert → Gaz (°C) :</label>
+        <input type="number" id="seuilGaz" step="0.1">
+        
+        <label>Coût PAC HC (€/kWh utile) :</label>
+        <input type="number" id="coutPacHC" step="0.001">
+        
+        <label>Coût PAC HP (€/kWh utile) :</label>
+        <input type="number" id="coutPacHP" step="0.001">
+        
+        <label>Coût bois (€/kWh utile) :</label>
+        <input type="number" id="coutBois" step="0.001">
+        
+        <label>Coût gaz (€/kWh utile) :</label>
+        <input type="number" id="coutGaz" step="0.001">
+        
+        <button onclick="saveSettings()">💾 Sauvegarder</button>
+    </details>
+
+    <canvas id="chartHistorique" width="400" height="200"></canvas>
+</main>
+
+<script>
+// Valeurs par défaut
+const defaults = {
+    latitude: 50.6927,
+    longitude: 3.1746,
+    seuilInsert: 10,
+    seuilGaz: 0,
+    coutPacHC: 0.045,
+    coutPacHP: 0.057,
+    coutBois: 0.067,
+    coutGaz: 0.120
+};
+
+// Charger paramètres
+function loadSettings() {
+    let settings = JSON.parse(localStorage.getItem("chauffageSettings")) || defaults;
+    for (const key in settings) {
+        document.getElementById(key).value = settings[key];
+    }
+    return settings;
+}
+
+// Sauvegarder paramètres
+function saveSettings() {
+    let settings = {};
+    for (const key in defaults) {
+        settings[key] = parseFloat(document.getElementById(key).value);
+    }
+    localStorage.setItem("chauffageSettings", JSON.stringify(settings));
+    alert("Paramètres sauvegardés ✅");
+    getWeatherAndRecommend();
+}
+
+// Charger historique
+function loadHistorique() {
+    return JSON.parse(localStorage.getItem("chauffageHistorique")) || [];
+}
+
+// Sauvegarder historique
+function saveHistorique(entry) {
+    let historique = loadHistorique();
+    historique.push(entry);
+    localStorage.setItem("chauffageHistorique", JSON.stringify(historique));
+}
+
+// Afficher graphique + économies
+function afficherGraphiqueEtEconomies() {
+    const historique = loadHistorique();
+    const labels = historique.map(e => e.date);
+    const couts = historique.map(e => e.coutJour);
+    const settings = loadSettings();
+
+    // Calcul économies cumulées vs 100 % gaz
+    const coutsGaz = historique.map(e => e.kwhJour * settings.coutGaz);
+    let economieTotale = 0;
+    for (let i = 0; i < historique.length; i++) {
+        economieTotale += coutsGaz[i] - couts[i];
+    }
+
+    document.getElementById("economies").innerText =
+        `💰 Économies cumulées vs 100% gaz : ${economieTotale.toFixed(2)} €`;
+
+    const ctx = document.getElementById('chartHistorique').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Coût chauffage/jour (€)',
+                data: couts,
+                borderColor: '#2563eb',
+                backgroundColor: 'rgba(37, 99, 235, 0.2)',
+                fill: true,
+                tension: 0.2
+            }]
+        }
+    });
+}
+
+// Récupérer météo et calculer recommandation
+function getWeatherAndRecommend() {
+    const settings = loadSettings();
+    const today = new Date().toLocaleDateString("fr-FR", {
+        weekday: "long", year: "numeric", month: "long", day: "numeric"
+    });
+    document.getElementById("date").innerText = today;
+
+    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${settings.latitude}&longitude=${settings.longitude}&daily=temperature_2m_max,temperature_2m_min&timezone=auto`)
+        .then(res => res.json())
+        .then(data => {
+            const min = data.daily.temperature_2m_min[0];
+            const max = data.daily.temperature_2m_max[0];
+            const moyenne = ((min + max) / 2).toFixed(1);
+            document.getElementById("tempMoy").innerText = `🌡 Température moyenne : ${moyenne} °C`;
+
+            let recommendation = "";
+            let icon = "";
+            let coutJour = 0;
+            let kwhJour = 15; // valeur fictive pour calcul économie, à affiner selon besoins réels
+
+            if (moyenne > settings.seuilInsert) {
+                recommendation = `Utiliser la PAC seule (maximiser les HC)`;
+                icon = "❄️";
+                coutJour = settings.coutPacHC * 5 + settings.coutPacHP * 10;
+            } else if (moyenne > settings.seuilGaz) {
+                recommendation = `PAC en priorité + Insert en soirée`;
+                icon = "🔥";
+                coutJour = (settings.coutPacHC * 3 + settings.coutPacHP * 5) + settings.coutBois * 7;
+            } else {
+                recommendation = `Insert bois principal + PAC en HC, Gaz si besoin`;
+                icon = "🪵";
+                coutJour = (settings.coutPacHC * 2) + (settings.coutBois * 8) + (settings.coutGaz * 5);
+            }
+
+            document.getElementById("recommendation").innerText =
+                `${recommendation} | Estimation coût jour : ${coutJour.toFixed(2)} €`;
+            document.getElementById("icon").innerText = icon;
+
+            saveHistorique({
+                date: today,
+                temp: parseFloat(moyenne),
+                recommandation: recommendation,
+                coutJour: parseFloat(coutJour.toFixed(2)),
+                kwhJour: kwhJour
+            });
+            afficherGraphiqueEtEconomies();
+        })
+        .catch(err => {
+            document.getElementById("tempMoy").innerText = "Erreur récupération météo";
+            console.error(err);
+        });
+}
+
+getWeatherAndRecommend();
+</script>
+</body>
+</html>
